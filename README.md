@@ -28,24 +28,32 @@ psql -U student
 
 -- Create the Timetable table
 CREATE TABLE Timetable (
-    course_id SERIAL PRIMARY KEY,
-    course_name VARCHAR(255),
-    day VARCHAR(50),
-    time VARCHAR(50),
+    crs_sec VARCHAR(50),
+    hrs FLOAT,
+    title VARCHAR(255),
+    instructor VARCHAR(255),
+    campus VARCHAR(255),
+    building VARCHAR(255),
     room VARCHAR(50),
-    level INT
+    days VARCHAR(10),
+    time VARCHAR(50),
+    date_range VARCHAR(50),
+    term VARCHAR(10),
+    type VARCHAR(50)
 );
 
 -- Insert Sample Data into the Timetable table
-INSERT INTO Timetable (course_name, day, time, room, level) VALUES
-('Computer Science 101', 'Monday', '9:00 AM', 'Room 101', 1),
-('Operating Systems', 'Tuesday', '10:00 AM', 'Room 102', 1),
-('Data Structures', 'Wednesday', '2:00 PM', 'Room 103', 2),
-('Advanced Algorithms', 'Thursday', '11:00 AM', 'Room 104', 3),
-('Machine Learning', 'Friday', '1:00 PM', 'Room 105', 2),
-('Database Systems', 'Monday', '3:00 PM', 'Room 106', 3),
-('Web Development', 'Tuesday', '11:00 AM', 'Room 107', 1),
-('Networking', 'Thursday', '2:00 PM', 'Room 108', 2);
+INSERT INTO Timetable (crs_sec, hrs, title, instructor, campus, building, room, days, time, date_range, term, type) VALUES
+('COSC 2110 3T', 3.0, 'Computer Languages', 'Bekov, San', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '115 ', '--T----', '02:00p 04:20p', '08/19/2024 12/13/2024', 'Fall', 'Lecture'),
+('COSC 2610 2T', 3.0, 'Operating Systems', 'Boeva, Sok', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '114 ', '--T----', '04:30p 06:50p', '08/19/2024 12/13/2024', 'Fall', 'Lecture'),
+('COSC 3410 1T', 3.0, 'Computer and Information', 'Isroilov', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '108 ', '----R---', '04:30p 06:50p', '08/19/2024 12/13/2024', 'Fall', 'Lecture'),
+('INTL 1500 1U', 3.0, 'The World System Since 1500', 'Badarch', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '409 ', '--M----', '11:30a 01:50p', '08/19/2024 12/13/2024', 'Fall', 'Lecture'),
+('SUST 1000 1U', 3.0, 'Introduction to', 'Mukhammady', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '108 ', '----R---', '02:00p 04:20p', '08/19/2024 12/13/2024', 'Fall', 'Lecture'),
+('EDEX 3001 3S', 1.0, 'Chess for Beginners', 'Singler, J', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '    ', '---W----', '07:00p 08:30p', '08/19/2024 10/11/2024', 'Fall', 'WebNet+'),
+('COSC 2810 3T', 3.0, 'Systems Analysis and Design', 'Artikov, R', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '115 ', '-M-----', '03:30p 06:20p', '01/15/2024 05/10/2024', 'Spring', 'Lecture'),
+('COSC 1570 2T', 3.0, 'Mathematics for Computer', 'Nacional', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '307 ', '-M-----', '12:30p 03:20p', '01/15/2024 05/10/2024', 'Spring', 'Lecture'),
+('POLT 1070 3U', 3.0, 'Introduction to Political', 'Sonila, S.', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '229 ', '----R--', '12:30p 03:20p', '01/15/2024 05/10/2024', 'Spring', 'Lecture'),
+('INTL 1050 2U', 3.0, 'Introduction - WITHDRAWN -', 'Yuldasheva', 'Webster Univ Tashkent, Uzbekistan', 'North Hall Classrooms', '110 ', '----R--', '09:30a 12:20p', '01/15/2024 05/10/2024', 'Spring', 'Lecture');
 ```
 
 ### 3. **Install Python and Flask Dependencies**
@@ -67,32 +75,42 @@ import pg8000
 
 app = Flask(__name__)
 
-# Home route to get user input for level
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        level = request.form["level"]
-        return render_template("timetable.html", level=level)
+        # Get the term from the form
+        term = request.form["term"]
+        return render_template("timetable.html", term=term, data=[], message="Loading timetable...")
+
     return render_template("index.html")
 
-# Timetable route to fetch timetable data based on the level
 @app.route("/timetable", methods=["GET"])
 def timetable():
-    level = request.args.get("level")
+    term = request.args.get('term')  # Get term from the query parameters
+    if not term:
+        return "term not provided", 400
 
-    # Connect to PostgreSQL using pg8000
-    conn = pg8000.connect(user="student", password="student_pass", host="localhost", port=5432, database="postgres")
+    # Connect to the PostgreSQL database
+    conn = pg8000.connect(
+        user="student",
+        password="student_pass",
+        host="localhost",
+        port=5432,
+        database="student"
+    )
+
     cur = conn.cursor()
-
-    # Fetch timetable for the selected level
-    query = f"SELECT * FROM Timetable WHERE level = {level};"
-    cur.execute(query)
+    query = "SELECT * FROM Timetable WHERE term = %s;"
+    cur.execute(query, (term,))
     rows = cur.fetchall()
 
-    message = "No data found for this level." if not rows else None
-    return render_template("timetable.html", data=rows, message=message)
+    # Pass data to the template
+    if rows:
+        return render_template("timetable.html", term=term, data=rows, message="")
+    else:
+        return render_template("timetable.html", term=term, data=[], message="No data found for this term.")
 
-# Run Flask app
+
 if __name__ == "__main__":
     app.run(debug=True)
 ```
