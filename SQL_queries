@@ -1,0 +1,53 @@
+-- Create the Timetable table
+CREATE TABLE Timetable (
+    course_id SERIAL PRIMARY KEY,
+    course_name VARCHAR(255),
+    day VARCHAR(50),
+    time VARCHAR(50),
+    room VARCHAR(50),
+    level INT
+);
+
+-- Insert Sample Data into the Timetable table
+INSERT INTO Timetable (course_name, day, time, room, level) VALUES
+('Computer Science 101', 'Monday', '9:00 AM', 'Room 101', 1),
+('Operating Systems', 'Tuesday', '10:00 AM', 'Room 102', 1),
+('Data Structures', 'Wednesday', '2:00 PM', 'Room 103', 2),
+('Advanced Algorithms', 'Thursday', '11:00 AM', 'Room 104', 3),
+('Machine Learning', 'Friday', '1:00 PM', 'Room 105', 2),
+('Database Systems', 'Monday', '3:00 PM', 'Room 106', 3),
+('Web Development', 'Tuesday', '11:00 AM', 'Room 107', 1),
+('Networking', 'Thursday', '2:00 PM', 'Room 108', 2);
+
+-- Optionally, create other related tables if needed, for example, students, courses, etc.
+-- Example: Students Table
+CREATE TABLE Students (
+    student_id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    level INT
+);
+
+-- Insert sample data into the Students table
+INSERT INTO Students (name, level) VALUES
+('Alice Johnson', 1),
+('Bob Smith', 2),
+('Charlie Brown', 3),
+('David Lee', 1);
+
+-- Example: Rooms Table (optional if you want to track rooms separately)
+CREATE TABLE Rooms (
+    room_id SERIAL PRIMARY KEY,
+    room_name VARCHAR(50),
+    building_name VARCHAR(50)
+);
+
+-- Insert sample data into the Rooms table
+INSERT INTO Rooms (room_name, building_name) VALUES
+('Room 101', 'Building A'),
+('Room 102', 'Building B'),
+('Room 103', 'Building C'),
+('Room 104', 'Building D'),
+('Room 105', 'Building E'),
+('Room 106', 'Building F'),
+('Room 107', 'Building G'),
+('Room 108', 'Building H');
